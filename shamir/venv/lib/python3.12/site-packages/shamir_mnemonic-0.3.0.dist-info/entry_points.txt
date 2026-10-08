@@ -1,0 +1,3 @@
+[console_scripts]
+shamir=shamir_mnemonic.cli:cli
+

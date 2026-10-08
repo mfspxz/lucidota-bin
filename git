@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+# git-guard shim — second-layer defense against the 20:51Z incident.
+#
+# A lane ran `git reset --hard` twice on 2026-10-08 and vaporized uncommitted
+# ledger.py work + falsification entries. The dispatch-time tripwire
+# (full-send/brief-lint.sh) catches bad briefs; this shim catches the bad
+# command at execution time.
+#
+# Install: put ~/workspace/bin FIRST on PATH (see GIT-SHIM-README.md).
+# The shim intercepts only the forbidden ops; everything else is passed
+# straight through to the real git. Escape hatch: call the real git by
+# absolute path (/usr/bin/git) — deliberate, never accidental.
+set -u
+
+SHIM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+
+# Find the real git: strip this shim's dir from PATH, then look it up.
+_newpath=""
+IFS=':' read -ra _pp <<< "${PATH:-/usr/bin:/bin}"
+for _d in "${_pp[@]}"; do
+  [[ "$_d" != "$SHIM_DIR" ]] && _newpath="${_newpath:+$_newpath:}$_d"
+done
+REAL_GIT="$(PATH="$_newpath" command -v git 2>/dev/null || true)"
+if [[ -z "$REAL_GIT" ]]; then
+  for _c in /usr/bin/git /usr/local/bin/git; do
+    [[ -x "$_c" ]] && { REAL_GIT="$_c"; break; }
+  done
+fi
+if [[ -z "$REAL_GIT" ]]; then
+  echo "git-guard: real git not found" >&2
+  exit 127
+fi
+
+refuse() { # refuse "<cmd...>" "<reason>"
+  printf 'git-guard: REFUSED `git %s`\n  %s\n  20:51Z incident (2026-10-08): a lane ran `git reset --hard` twice and vaporized\n  uncommitted ledger.py work + falsification entries. Recovery cost a full lane.\n  Destructive git ops are forbidden here — commit work same-turn instead.\n  Certain? Bypass with the real git directly: %s %s\n' \
+    "$1" "$2" "$REAL_GIT" "$1" >&2
+  exit 1
+}
+
+# Locate the subcommand, skipping git global options. --help/-h/--version
+# pass straight through (never intercept help output).
+sub=""; si=-1
+for ((i = 0; i < $#; i++)); do
+  a="${@:$(($i + 1)):1}"
+  case "$a" in
+    --help|-h|--version) exec "$REAL_GIT" "$@" ;;
+    -C|-c) i=$((i + 1)) ;; # these take a value
+    --config=*) ;;
+    -*) ;;
+    *) sub="$a"; si=$i; break ;;
+  esac
+done
+((si < 0)) && exec "$REAL_GIT" "$@"
+
+# args after the subcommand
+rest=()
+for ((i = si + 1; i < $#; i++)); do rest+=("${@:$(($i + 1)):1}"); done
+
+in_rest() { # exact option match
+  local x
+  for x in "${rest[@]}"; do [[ "$x" == "$1" ]] && return 0; done
+  return 1
+}
+has_short() { # short-flag bundle containing letter, e.g. has_short f matches -f, -fd
+  local x
+  for x in "${rest[@]}"; do
+    [[ "$x" == "--" ]] && break
+    if [[ "$x" =~ ^-[a-zA-Z]+$ && "$x" == *"$1"* ]]; then return 0; fi
+  done
+  return 1
+}
+has_dashdash() { in_rest "--"; }
+
+in_repo() { "$REAL_GIT" rev-parse --git-dir >/dev/null 2>&1; }
+
+tree_dirty() {
+  # Tracked modifications, staged or unstaged. Untracked files are
+  # reset-proof (reset --hard never touches them), so they don't count.
+  ! "$REAL_GIT" diff --quiet 2>/dev/null || ! "$REAL_GIT" diff --cached --quiet 2>/dev/null
+}
+
+cmdline="$sub ${rest[*]}"
+
+case "$sub" in
+  reset)
+    in_repo || exec "$REAL_GIT" "$@"
+    if in_rest "--hard"; then
+      tree_dirty && refuse "$cmdline" "\`--hard\` destroys uncommitted work across the whole tree."
+    elif ! has_dashdash && ! in_rest "--soft"; then
+      # pathspec-free, not --soft: moves HEAD and/or resets the index.
+      # (--soft keeps everything; `reset -- <path>` only unstages — both safe.)
+      tree_dirty && refuse "$cmdline" "pathspec-free reset moves HEAD / resets the index."
+    fi
+    ;;
+  stash)
+    # Bare `git stash` / push / save park work out of the tree where a
+    # reset can lose it. Only explicit restore/inspect subcommands pass.
+    s1="${rest[0]:-}"
+    case "$s1" in
+      list|show|apply|pop|branch|create|store) ;;
+      *) refuse "$cmdline" "\`stash\` parks work where a reset can lose it — use selective staging instead." ;;
+    esac
+    ;;
+  clean)
+    if in_rest "--force" || has_short f; then
+      refuse "$cmdline" "\`clean -f\` deletes untracked files (fixtures/evidence/WIP are untracked by design)."
+    fi
+    ;;
+  checkout|switch)
+    if in_rest "--force" || has_short f; then
+      refuse "$cmdline" "\`--force\` overwrites local modifications without asking."
+    fi
+    ;;
+  push)
+    if in_rest "--force" || has_short f; then
+      refuse "$cmdline" "\`push --force\` rewrites shared history. (--force-with-lease is allowed.)"
+    fi
+    ;;
+  rebase)
+    refuse "$cmdline" "history rewriting is forbidden — history is append-only."
+    ;;
+  pull)
+    in_rest "--rebase" && refuse "$cmdline" "\`pull --rebase\` rewrites history — history is append-only."
+    ;;
+  commit)
+    in_rest "--amend" && refuse "$cmdline" "\`commit --amend\` rewrites history — history is append-only."
+    ;;
+  filter-branch|filter-repo)
+    refuse "$cmdline" "history rewriting is forbidden — history is append-only."
+    ;;
+esac
+
+exec "$REAL_GIT" "$@"
