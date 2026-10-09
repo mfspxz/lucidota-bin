@@ -1,2 +1,6 @@
 __pycache__/
 *.pyc
+target/
+node_modules/
+.venv/
+state/
