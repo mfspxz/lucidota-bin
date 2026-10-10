@@ -11,6 +11,20 @@
 #   lane/wave    : must match payload.lane / payload.wave (anti-replay binding)
 #   out.done.json: destination (default: stdout)
 #
+# CONSUMER/GATE CHAIN (R-6): this script is a producer, not a control.
+# The named consumer is verify-receipt.sh (checks envelope sig,
+# anti-replay binding, payload status/ts); the enforcement gate is the
+# full-send driver + wave-done hook, which refuse to board any lane
+# verdict that verify-receipt.sh rejects. A signed-but-unverified receipt
+# has zero verification power — only the verified-through-gate receipt
+# counts.
+#
+# PROVENANCE (R-8): the envelope is SIGNED by the authority key via the
+# existing lucidota-receipt/1 code (proof-ledger/rs/src/envelope.rs) — no
+# second envelope. Verification power: forging a boardable verdict
+# requires the authority key, not just workspace write access. Unsigned
+# .done.json files are forgeable and are REJECTED by the gate.
+#
 # The script adds "ts" (RFC3339 UTC) to the payload if absent, then calls:
 #   pl envelope op=wrap actor=lucidota/<lane> claim_id=fullsend:<wave>/<lane> status=claimed payload='<json>'
 #

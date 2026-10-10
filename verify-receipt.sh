@@ -8,6 +8,13 @@
 #      in, and payload.lane matches the filename (<lane>.done.json).
 #   3. payload.status is one of done|failed|blocked; payload.ts is present.
 #
+# CONSUMER/GATE CHAIN (R-6): this script IS the named consumer for
+# sign-receipt.sh output and the enforcement gate for the full-send
+# driver. The driver + wave-done hook board ONLY receipts that exit 0
+# here. Exit 1 = REJECT (reason on stderr). Exit 2 = usage/tooling error.
+# This is the control; the unsigned-by-default alternative (raw .done.json)
+# was DELETED from the boarding path, not left as a parallel option.
+#
 # Usage: verify-receipt.sh <receipt.done.json>
 # Exit 0 = ACCEPT (prints payload JSON to stdout for the driver).
 # Exit 1 = REJECT (reason on stderr). Exit 2 = usage/tooling error.

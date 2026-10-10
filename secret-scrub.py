@@ -13,6 +13,22 @@ Usage:
 
 Allowlist: .secrets-allowlist (repo root) — one regex per line, matched
 against the full line. Use sparingly; every entry is a hole.
+
+HONEST BOUNDS (R-2 — read before trusting this gate):
+  Catches: (a) known key prefixes (sk-/ghp_/gho_/ghu_/xox[bpras]-/AKIA/
+  cfut_/cfat_/AIza, PEM private-key headers); (b) any 32+ char
+  high-entropy token-looking run (LONG_PAT + Shannon entropy > 4.0).
+  Admits it CANNOT catch: (a) secrets shorter than 32 chars without a
+  known prefix (e.g. short passwords, 16-char API keys); (b) secrets in
+  binary/non-UTF8 files it cannot read; (c) secrets split across lines,
+  URL-encoded, base64-of-structured-payload that doesn't look
+  high-entropy, or deliberately obfuscated values; (d) NEW key prefixes
+  not in PREFIX_PAT until added; (e) allowlist abuse — every regex in
+  .secrets-allowlist is a hole, review them.
+  It is a best-effort tripwire with a consumer (the pre-commit hook
+  blocks the commit), not a guarantee. Hardening past this bound is
+  frozen; structural answers (vaulted secrets, env-only flow) are the
+  real fix.
 """
 import math
 import os
