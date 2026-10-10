@@ -1,0 +1,39 @@
+{
+  "authority": {
+    "declared_valence": "candidate",
+    "granted_capabilities": [
+      "bin.checkpoint-compute:write"
+    ],
+    "mutation_class": "write",
+    "required_capability": null
+  },
+  "codon": "bn",
+  "contracts": [
+    {
+      "description": "Checkpoint compute state",
+      "input_schema": {
+        "properties": {
+          "scope": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "write",
+      "op": "checkpoint",
+      "required_capability": "bin.checkpoint-compute:write"
+    }
+  ],
+  "description": "Checkpoint compute state.",
+  "name": "bin-checkpoint-compute",
+  "receipt_policy": {
+    "algorithm": "sha256",
+    "chain": true,
+    "content_addressed": true
+  },
+  "schema_version": "1",
+  "transports": [
+    "unix_socket"
+  ],
+  "version": "1.0.0"
+}

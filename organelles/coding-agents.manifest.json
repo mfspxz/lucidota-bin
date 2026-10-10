@@ -1,0 +1,36 @@
+{
+  "authority": {
+    "declared_valence": "candidate",
+    "granted_capabilities": [],
+    "mutation_class": "read_only",
+    "required_capability": null
+  },
+  "codon": "bn",
+  "contracts": [
+    {
+      "description": "Print coding-agent env setup",
+      "input_schema": {
+        "properties": {
+          "shell": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "read_only",
+      "op": "env"
+    }
+  ],
+  "description": "Coding-agent environment setup (gemini/copilot/gh).",
+  "name": "bin-coding-agents",
+  "receipt_policy": {
+    "algorithm": "sha256",
+    "chain": true,
+    "content_addressed": true
+  },
+  "schema_version": "1",
+  "transports": [
+    "unix_socket"
+  ],
+  "version": "1.0.0"
+}

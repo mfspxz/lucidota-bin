@@ -1,0 +1,52 @@
+{
+  "authority": {
+    "declared_valence": "candidate",
+    "granted_capabilities": [
+      "bin.receipt-tools:write"
+    ],
+    "mutation_class": "write",
+    "required_capability": null
+  },
+  "codon": "bn",
+  "contracts": [
+    {
+      "description": "Sign a receipt",
+      "input_schema": {
+        "properties": {
+          "payload": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "write",
+      "op": "sign",
+      "required_capability": "bin.receipt-tools:write"
+    },
+    {
+      "description": "Verify a signed receipt",
+      "input_schema": {
+        "properties": {
+          "receipt": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "read_only",
+      "op": "verify"
+    }
+  ],
+  "description": "Receipt signing + verification tools.",
+  "name": "bin-receipt-tools",
+  "receipt_policy": {
+    "algorithm": "sha256",
+    "chain": true,
+    "content_addressed": true
+  },
+  "schema_version": "1",
+  "transports": [
+    "unix_socket"
+  ],
+  "version": "1.0.0"
+}

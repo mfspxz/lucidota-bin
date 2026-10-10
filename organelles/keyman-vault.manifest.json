@@ -1,0 +1,42 @@
+{
+  "authority": {
+    "declared_valence": "candidate",
+    "granted_capabilities": [
+      "bin.keyman-vault:write"
+    ],
+    "mutation_class": "write",
+    "required_capability": null
+  },
+  "codon": "bn",
+  "contracts": [
+    {
+      "description": "Key/vault operation by name only",
+      "input_schema": {
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "write",
+      "op": "manage",
+      "required_capability": "bin.keyman-vault:write"
+    }
+  ],
+  "description": "Key management + vault export (never emits values; names only).",
+  "name": "bin-keyman-vault",
+  "receipt_policy": {
+    "algorithm": "sha256",
+    "chain": true,
+    "content_addressed": true
+  },
+  "schema_version": "1",
+  "transports": [
+    "unix_socket"
+  ],
+  "version": "1.0.0"
+}

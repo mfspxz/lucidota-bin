@@ -1,0 +1,39 @@
+{
+  "authority": {
+    "declared_valence": "candidate",
+    "granted_capabilities": [
+      "bin.backup:write"
+    ],
+    "mutation_class": "write",
+    "required_capability": null
+  },
+  "codon": "bn",
+  "contracts": [
+    {
+      "description": "Run the S22 proof backup",
+      "input_schema": {
+        "properties": {
+          "level": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "write",
+      "op": "backup",
+      "required_capability": "bin.backup:write"
+    }
+  ],
+  "description": "S22 proof backup: tier-0 tarballs + tier-1 git bundles.",
+  "name": "bin-backup",
+  "receipt_policy": {
+    "algorithm": "sha256",
+    "chain": true,
+    "content_addressed": true
+  },
+  "schema_version": "1",
+  "transports": [
+    "unix_socket"
+  ],
+  "version": "1.0.0"
+}
