@@ -42,23 +42,9 @@ if ! flock -n 9; then
   exit 0
 fi
 
-# --- cheap change signature
+# --- cheap change signature (from the FILTERED capture set, so volatile
+# scratch churn can't defeat the no-op check)
 HEAD_SHA="$(git -C "$REPO" rev-parse HEAD 2>/dev/null)" || { echo "checkpoint-compute: cannot read HEAD"; exit 1; }
-PORCELAIN="$(git -C "$REPO" status --porcelain 2>/dev/null)" || { echo "checkpoint-compute: status failed"; exit 1; }
-SIG="$(printf '%s\n%s' "$HEAD_SHA" "$PORCELAIN" | sha256sum | cut -d' ' -f1)"
-
-latest="$(ls -dt "$SNAPDIR"/*/ 2>/dev/null | grep -v '/\.' | head -1 || true)"
-if [ -n "$latest" ] && [ -f "$latest/SNAPSHOT.json" ] && [ "$FORCE" != "--force" ]; then
-  prev_sig="$(python3 -c "import json;print(json.load(open('$latest/SNAPSHOT.json'))['signature'])" 2>/dev/null || true)"
-  if [ "$SIG" = "$prev_sig" ]; then
-    echo "checkpoint-compute: unchanged (sig ${SIG:0:12}); no-op"
-    exit 0
-  fi
-fi
-
-STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-DEST="$SNAPDIR/$STAMP"
-mkdir -p "$DEST"
 
 # --- enumerate capture set: tracked-modified + untracked (respect .gitignore)
 mapfile -t MODIFIED < <(git -C "$REPO" diff --name-only HEAD -- . 2>/dev/null || true)
@@ -68,8 +54,11 @@ mapfile -t UNTRACKED < <(git -C "$REPO" ls-files --others --exclude-standard -- 
 is_excluded() {
   case "$1" in
     burn-outputs/*|*/burn-outputs/*) return 0 ;;
+    runs/tmp*|*/runs/tmp*) return 0 ;;
+    .pytest-tmp/*|*/.pytest-tmp/*|.pytest_cache/*|*/.pytest_cache/*) return 0 ;;
     __pycache__/*|*/__pycache__/*|*.pyc) return 0 ;;
     .venv/*|*/.venv/*|target/*|*/target/*|node_modules/*|*/node_modules/*) return 0 ;;
+    *.tmp|*.tmp-*|*/.tmp|*/.tmp-*) return 0 ;;  # transient churn, not work product
     *.pem|*.key|id_rsa*|.ssh/*|*/.ssh/*) return 0 ;;
     .env|.env.*|*/.env|*/.env.*) return 0 ;;
     *credentials*|*secret*|*token*|*passwd*|*shadow*) return 0 ;;
@@ -85,6 +74,23 @@ for f in "${MODIFIED[@]}" "${UNTRACKED[@]}"; do
   [ -f "$REPO/$f" ] || continue
   FILES+=("$f")
 done
+
+SIG="$(printf '%s\n%s' "$HEAD_SHA" "$(printf '%s\n' "${FILES[@]}")" | sha256sum | cut -d' ' -f1)"
+
+latest="$(ls -dt "$SNAPDIR"/*/ 2>/dev/null | grep -v '/\.' | head -1 || true)"
+if [ -n "$latest" ] && [ -f "$latest/SNAPSHOT.json" ] && [ "$FORCE" != "--force" ]; then
+  prev_sig="$(python3 -c "import json;print(json.load(open('$latest/SNAPSHOT.json'))['signature'])" 2>/dev/null || true)"
+  if [ "$SIG" = "$prev_sig" ]; then
+    echo "checkpoint-compute: unchanged (sig ${SIG:0:12}); no-op"
+    exit 0
+  fi
+fi
+
+STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+DEST="$SNAPDIR/$STAMP"
+mkdir -p "$DEST"
+
+# (FILES[] computed above, before the signature no-op check)
 
 # --- copy preserving relative paths
 total_bytes=0
