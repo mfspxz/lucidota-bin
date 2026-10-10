@@ -2,7 +2,7 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "bin.receipt-tools:sign"
+      "bin.receipt-tools.sign"
     ],
     "mutation_class": "write",
     "required_capability": null
@@ -27,7 +27,7 @@
       },
       "mutation_class": "write",
       "op": "sign",
-      "required_capability": "bin.receipt-tools:sign"
+      "required_capability": "bin.receipt-tools.sign"
     },
     {
       "description": "Verify a signed lane receipt (sig + anti-replay lane/wave binding)",

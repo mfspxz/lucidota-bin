@@ -2,7 +2,7 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "bin.graph-etl:write"
+      "bin.graph-etl.write"
     ],
     "mutation_class": "write",
     "required_capability": null
@@ -21,7 +21,7 @@
       },
       "mutation_class": "write",
       "op": "etl_devgraph",
-      "required_capability": "bin.graph-etl:write"
+      "required_capability": "bin.graph-etl.write"
     },
     {
       "description": "Run enrich-graphs entity-graph enrichment",
@@ -35,7 +35,7 @@
       },
       "mutation_class": "write",
       "op": "etl_enrich",
-      "required_capability": "bin.graph-etl:write"
+      "required_capability": "bin.graph-etl.write"
     },
     {
       "description": "Supervise Drive ETL pipelines (resume-safe restart of missing stages)",
@@ -45,7 +45,7 @@
       },
       "mutation_class": "write",
       "op": "etl_watchdog",
-      "required_capability": "bin.graph-etl:write"
+      "required_capability": "bin.graph-etl.write"
     }
   ],
   "description": "Graph ETL: devgraph + enrich-graphs + drive-etl-watchdog.",

@@ -2,7 +2,7 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "bin.backup:write"
+      "bin.backup.write"
     ],
     "mutation_class": "write",
     "required_capability": null
@@ -21,7 +21,7 @@
       },
       "mutation_class": "write",
       "op": "backup",
-      "required_capability": "bin.backup:write"
+      "required_capability": "bin.backup.write"
     }
   ],
   "description": "S22 proof backup: tier-0 tarballs + tier-1 git bundles.",

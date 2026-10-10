@@ -2,7 +2,7 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "bin.checkpoint:write"
+      "bin.checkpoint.write"
     ],
     "mutation_class": "write",
     "required_capability": null
@@ -21,7 +21,7 @@
       },
       "mutation_class": "write",
       "op": "checkpoint",
-      "required_capability": "bin.checkpoint:write"
+      "required_capability": "bin.checkpoint.write"
     }
   ],
   "description": "Checkpoint compute state.",

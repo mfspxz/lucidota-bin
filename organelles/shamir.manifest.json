@@ -2,8 +2,8 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "bin.shamir:split",
-      "bin.shamir:combine"
+      "bin.shamir.split",
+      "bin.shamir.combine"
     ],
     "mutation_class": "write",
     "required_capability": null
@@ -25,7 +25,7 @@
       },
       "mutation_class": "write",
       "op": "split",
-      "required_capability": "bin.shamir:split"
+      "required_capability": "bin.shamir.split"
     },
     {
       "description": "Combine SLIP-0039 mnemonic shares back into the secret (shares via FILE PATH only)",
@@ -39,7 +39,7 @@
       },
       "mutation_class": "write",
       "op": "combine",
-      "required_capability": "bin.shamir:combine"
+      "required_capability": "bin.shamir.combine"
     }
   ],
   "description": "Audited Trezor SLIP-0039 mnemonic share split/combine for vault-root splitting.",

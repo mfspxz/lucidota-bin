@@ -2,8 +2,8 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "bin.keyman-vault:manage",
-      "bin.keyman-vault:write"
+      "bin.keyman-vault.manage",
+      "bin.keyman-vault.write"
     ],
     "mutation_class": "external_effect",
     "required_capability": null
@@ -25,7 +25,7 @@
       },
       "mutation_class": "external_effect",
       "op": "manage",
-      "required_capability": "bin.keyman-vault:manage"
+      "required_capability": "bin.keyman-vault.manage"
     },
     {
       "description": "Export vault records to portable format (names only in logs)",
@@ -39,7 +39,7 @@
       },
       "mutation_class": "write",
       "op": "export_vault",
-      "required_capability": "bin.keyman-vault:write"
+      "required_capability": "bin.keyman-vault.write"
     },
     {
       "description": "Export vault to KeePassXC database",
@@ -53,7 +53,7 @@
       },
       "mutation_class": "write",
       "op": "export_keepassxc",
-      "required_capability": "bin.keyman-vault:write"
+      "required_capability": "bin.keyman-vault.write"
     }
   ],
   "description": "Key management + vault export (never emits values; names only).",
