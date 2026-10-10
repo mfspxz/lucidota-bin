@@ -37,6 +37,29 @@ LONG_PAT = re.compile(r'[A-Za-z0-9_.\-~+/=]{32,}')
 # on paths; per-match skip, so other matches on the same line are still
 # evaluated.)
 _PATH_SHAPE = re.compile(r'~?/[\w.\-~]+(?:/[\w.\-~]+)+')
+# A compute-pipeline run id (driver.py make_run_id: run-<UTC stamp>.
+# <microseconds>-<pid>-<wo_sha256[:8]>, plus the older run-<stamp>-<hex8>
+# shape). These are machine-generated RUN identifiers — 46+ chars with
+# hex segments, so they trip LONG_PAT's len>=40/entropy rule — but they
+# are not credential material: no key prefix, no bearer usage, literal
+# "run-" prefix with a fixed timestamp structure. Per-match skip, so
+# other matches on the same line are still evaluated.
+# (2026-10-09: checkpoint-compute's secret gate kept deleting snapshots
+# because run-receipt.json/report.json carry run_id values.)
+# (2026-10-10: driver.py:941 mints attempt_id = f"{run_id}-a{n}" — the run
+# id plus an attempt-sequence tail (-a1, -a2, ...), which pushed the match
+# to 45 chars and tripped LONG_PAT on quota.jsonl lines 1,3. The -a\d+ tail
+# is part of the machine-generated id, not credential material.)
+_RUNID_SHAPE = re.compile(r'run-\d{8}T\d{6}Z(?:\.\d{6}-\d+)?-[0-9a-f]{8}(?:-a\d+)?')
+_PUNCT_SHAPE = re.compile(r'[-_.~+/=]+')
+# A LONG_PAT match consisting ONLY of punctuation characters from the
+# class (hyphens, dots, underscores, tildes, plus, slash, equals) is not
+# credential material — no real credential format is punctuation-only.
+# Comment/rule separators (long hyphen runs like "# ----...----") trip
+# LONG_PAT's len>=64 rule on every long separator. Per-match skip, so
+# other matches on the same line are still evaluated.
+# (2026-10-09: checkpoint-compute's secret gate deleted a snapshot on
+# pipeline/dispatch_test.py:77 — a 64-hyphen comment separator.)
 
 # 2026-10-08: the ledger/falsification/execution files are hash-chained —
 # every record carries "_prev_hash"/"_record_hash" 64-hex digests computed
@@ -97,6 +120,10 @@ def scan_file(path: str, allow):
                 for m in LONG_PAT.findall(line):
                     if _PATH_SHAPE.search(m):
                         continue  # filesystem path, not a secret
+                    if _RUNID_SHAPE.fullmatch(m):
+                        continue  # pipeline run id, not a secret
+                    if _PUNCT_SHAPE.fullmatch(m):
+                        continue  # punctuation-only run (comment/rule separators)
                     # high-entropy long token, not a UUID / path / hash-looking run
                     if len(m) >= 40 and shannon(m) > 4.0:
                         hits.append(i)
