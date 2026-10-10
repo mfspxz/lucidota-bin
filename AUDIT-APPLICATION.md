@@ -189,11 +189,11 @@ GIT-SHIM-README.md was spot-checked for claims. None were flagged as unsourced. 
 
 | File | Change | Commit |
 |---|---|---|
-| secret-scrub.py | HONEST BOUNDS docstring; PREFIX_PAT fixed budget | TBD |
-| sign-receipt.sh | CONSUMER/GATE CHAIN + PROVENANCE headers | TBD |
-| verify-receipt.sh | CONSUMER/GATE CHAIN; unsigned-by-default path removed | TBD |
+| secret-scrub.py | HONEST BOUNDS docstring; PREFIX_PAT fixed budget | d8fe785 |
+| sign-receipt.sh | CONSUMER/GATE CHAIN + PROVENANCE headers | d8fe785 |
+| verify-receipt.sh | CONSUMER/GATE CHAIN; unsigned-by-default path removed | d8fe785 |
 
-No commit hashes were available in this pass.
+Commit `d8fe785`: "brutal-audit: R-2 bounds on secret-scrub + R-5 best-effort declaration; R-6/R-8 consumer+gate+provenance on sign/verify-receipt; AUDIT-APPLICATION.md".
 
 ---
 
