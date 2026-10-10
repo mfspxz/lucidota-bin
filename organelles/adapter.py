@@ -32,17 +32,33 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SOCK_DEFAULT = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "organelle-host.sock")
 TIMEOUT_SECS = 600  # matches execution.json resource_envelope.wall_time_secs
 
-# (codon, op) -> (mode, entry). mode: py | sh | bin | delegate | py-template | dir
+# (codon, op) -> (mode, entry). mode: py | sh | bin
+# Kept mechanical: input keys become --kebab-case flags. No business logic.
 DISPATCH = {
-    ('bn', 'backup'): ('sh', 'backup-s22-proof.sh'),
-    ('bn', 'checkpoint'): ('sh', 'checkpoint-compute.sh'),
-    ('bn', 'env'): ('sh', 'coding-agents-env.sh'),
-    ('bn', 'etl'): ('py', 'devgraph.py'),
-    ('bn', 'manage'): ('py', 'keyman.py'),
-    ('bn', 'scrub'): ('py', 'secret-scrub.py'),
-    ('bn', 'sign'): ('sh', 'sign-receipt.sh'),
-    ('bn', 'verify'): ('sh', 'sign-receipt.sh'),
+    ('bk', 'backup'): ('sh', 'backup-s22-proof.sh'),
+    ('bc', 'checkpoint'): ('sh', 'checkpoint-compute.sh'),
+    ('be', 'env'): ('sh', 'coding-agents-env.sh'),
+    ('bg', 'etl_devgraph'): ('py', 'devgraph.py'),
+    ('bg', 'etl_enrich'): ('py', 'enrich-graphs.py'),
+    ('bg', 'etl_watchdog'): ('sh', 'drive-etl-watchdog.sh'),
+    ('bv', 'manage'): ('py', 'keyman.py'),
+    ('bv', 'export_vault'): ('py', 'vault-export.py'),
+    ('bv', 'export_keepassxc'): ('py', 'vault-to-keepassxc.py'),
+    ('br', 'sign'): ('sh', 'sign-receipt.sh'),
+    ('br', 'verify'): ('sh', 'verify-receipt.sh'),
+    ('bs', 'scrub'): ('py', 'secret-scrub.py'),
+    ('bs', 'extract_scrub'): ('py', 'extract-and-scrub.py'),
+    ('bm', 'split'): ('py', 'shamir/shamir-vetted.py'),
+    ('bm', 'combine'): ('py', 'shamir/shamir-vetted.py'),
 }
+
+def _receipt_id(payload):
+    """Interim receipt id: sha256 of canonical output JSON, tagged
+    adapter-interim. The host replaces this with a chain receipt at
+    registration; until then every response is still content-addressed."""
+    import hashlib
+    canon = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    return "adapter-interim:sha256:" + hashlib.sha256(canon).hexdigest()
 
 def kebab(k):
     return "--" + re.sub(r"_", "-", k)
@@ -75,40 +91,49 @@ def build_argv(mode, entry, op_input):
             argv += [kebab(k), str(v)]
     return argv
 
+def _resp(rid, ok, output=None, error=None):
+    """WireResponse-shaped reply: id/ok/output/error + interim receipt id.
+    error is None on success; output is None on failure (mirrors
+    surface-unix WireResponse so a future host bridge can pass these
+    through unchanged)."""
+    r = {"id": rid, "ok": ok, "output": output, "error": error,
+         "receipt": _receipt_id({"ok": ok, "output": output, "error": error})}
+    return r
+
 def handle(req):
     rid = req.get("id")
     codon, op, op_input = req.get("codon"), req.get("op"), req.get("input") or {}
     if not isinstance(rid, int) or not codon or not op or not isinstance(op_input, dict):
-        return {"id": rid, "ok": False, "output": {"error": "malformed request"}}
+        return _resp(rid, False, error={"verdict": "rejected", "reason": "malformed request"})
     if op == "suspend":
-        return {"id": rid, "ok": True,
-                "output": {"checkpoint": "ephemeral",
-                           "note": "in-flight op drained; adapter state is ephemeral"}}
+        return _resp(rid, True,
+                     output={"checkpoint": "ephemeral",
+                             "note": "in-flight op drained; adapter state is ephemeral"})
     if op == "kill":
-        return {"id": rid, "ok": True,
-                "output": {"final": True, "note": "final receipt; adapter exiting"}}
+        return _resp(rid, True,
+                     output={"final": True, "note": "final receipt; adapter exiting"})
     key = (codon, op)
     if key not in DISPATCH:
-        return {"id": rid, "ok": False, "output": {"error": "unknown op %s/%s" % (codon, op)}}
+        return _resp(rid, False, error={"verdict": "rejected",
+                                        "reason": "unknown op %s/%s" % (codon, op)})
     mode, entry = DISPATCH[key]
-    if mode == "dir":
-        return {"id": rid, "ok": False,
-                "output": {"error": "dir-mode unit: no single entrypoint; invoke via the repo harness",
-                           "unit_dir": entry}}
     try:
         argv = build_argv(mode, entry, op_input)
     except Exception as e:
-        return {"id": rid, "ok": False, "output": {"error": "argv build failed: %s" % e}}
+        return _resp(rid, False, error={"verdict": "rejected", "reason": "argv build failed: %s" % e})
     try:
         p = subprocess.run(argv, capture_output=True, text=True,
                            timeout=TIMEOUT_SECS, cwd=REPO_ROOT)
         out = {"stdout": p.stdout[-8000:], "stderr": p.stderr[-4000:], "exit_code": p.returncode}
-        return {"id": rid, "ok": p.returncode == 0, "output": out}
+        if p.returncode == 0:
+            return _resp(rid, True, output=out)
+        return _resp(rid, False, error={"verdict": "failed",
+                                       "reason": "entrypoint exit %d" % p.returncode}, output=out)
     except subprocess.TimeoutExpired:
-        return {"id": rid, "ok": False,
-                "output": {"error": "timeout after %ss (suspend-first: host retries)" % TIMEOUT_SECS}}
+        return _resp(rid, False, error={"verdict": "timeout",
+                                       "reason": "timeout after %ss (suspend-first: host retries)" % TIMEOUT_SECS})
     except Exception as e:
-        return {"id": rid, "ok": False, "output": {"error": "spawn failed: %s" % e}}
+        return _resp(rid, False, error={"verdict": "error", "reason": "spawn failed: %s" % e})
 
 def serve(sock_path):
     if os.path.exists(sock_path):
@@ -140,7 +165,7 @@ def serve(sock_path):
                     except Exception as e:
                         resp = {"id": None, "ok": False, "output": {"error": "bad json: %s" % e}}
                     conn.sendall((json.dumps(resp) + "\n").encode())
-                    if resp.get("output", {}).get("final"):
+                    if (resp.get("output") or {}).get("final"):
                         shutdown["flag"] = True
                         break
                 if shutdown["flag"]: break

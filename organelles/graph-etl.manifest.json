@@ -7,10 +7,10 @@
     "mutation_class": "write",
     "required_capability": null
   },
-  "codon": "bn",
+  "codon": "bg",
   "contracts": [
     {
-      "description": "Run graph ETL",
+      "description": "Run devgraph entity-graph ETL",
       "input_schema": {
         "properties": {
           "source": {
@@ -20,7 +20,31 @@
         "type": "object"
       },
       "mutation_class": "write",
-      "op": "etl",
+      "op": "etl_devgraph",
+      "required_capability": "bin.graph-etl:write"
+    },
+    {
+      "description": "Run enrich-graphs entity-graph enrichment",
+      "input_schema": {
+        "properties": {
+          "source": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "write",
+      "op": "etl_enrich",
+      "required_capability": "bin.graph-etl:write"
+    },
+    {
+      "description": "Supervise Drive ETL pipelines (resume-safe restart of missing stages)",
+      "input_schema": {
+        "properties": {},
+        "type": "object"
+      },
+      "mutation_class": "write",
+      "op": "etl_watchdog",
       "required_capability": "bin.graph-etl:write"
     }
   ],

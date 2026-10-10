@@ -5,16 +5,12 @@
     "mutation_class": "read_only",
     "required_capability": null
   },
-  "codon": "bn",
+  "codon": "be",
   "contracts": [
     {
-      "description": "Print coding-agent env setup",
+      "description": "Print coding-agent env setup (gemini/copilot/gh PATH, keys, trust flags)",
       "input_schema": {
-        "properties": {
-          "shell": {
-            "type": "string"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "mutation_class": "read_only",

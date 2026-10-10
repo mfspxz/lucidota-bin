@@ -2,18 +2,24 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "bin.receipt-tools:write"
+      "bin.receipt-tools:sign"
     ],
     "mutation_class": "write",
     "required_capability": null
   },
-  "codon": "bn",
+  "codon": "br",
   "contracts": [
     {
-      "description": "Sign a receipt",
+      "description": "Wrap a lane receipt in a lucidota-receipt/1 envelope (authority-signed)",
       "input_schema": {
         "properties": {
+          "lane": {
+            "type": "string"
+          },
           "payload": {
+            "type": "string"
+          },
+          "wave": {
             "type": "string"
           }
         },
@@ -21,10 +27,10 @@
       },
       "mutation_class": "write",
       "op": "sign",
-      "required_capability": "bin.receipt-tools:write"
+      "required_capability": "bin.receipt-tools:sign"
     },
     {
-      "description": "Verify a signed receipt",
+      "description": "Verify a signed lane receipt (sig + anti-replay lane/wave binding)",
       "input_schema": {
         "properties": {
           "receipt": {

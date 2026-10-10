@@ -12,7 +12,7 @@
       "~/workspace/organelles"
     ]
   },
-  "generated": "organelle-migration wave 5",
+  "generated": "organelle-migration wave 5 (corrected doctrine: distinct codons, MAPPING.md)",
   "kill_semantics": {
     "final_receipt": true,
     "kill": "SIGTERM to child entrypoints, then exit; kill always emits a final receipt",
@@ -33,7 +33,7 @@
     "policy": "subprocess-only"
   },
   "repo": "bin",
-  "repo_head": "5878a637ddbd77943d210640b973038a5f12f444",
+  "repo_head": "7a255b69068803e2280d2a4c50e51facb4eae31d",
   "resource_envelope": {
     "cpu_cores": 2,
     "io_mb": 512,
@@ -46,5 +46,45 @@
     "note": "capability names only in manifests; secret values never in env, logs, receipts, or manifests",
     "policy": "vault-ref-only"
   },
-  "tier": "B"
+  "tier": "B",
+  "units": {
+    "bin-backup": {
+      "codon": "bk",
+      "note": "tarball+git-bundle run can be slow",
+      "wall_time_secs": 1800
+    },
+    "bin-checkpoint-compute": {
+      "codon": "bc",
+      "wall_time_secs": 300
+    },
+    "bin-coding-agents": {
+      "codon": "be",
+      "wall_time_secs": 60
+    },
+    "bin-graph-etl": {
+      "codon": "bg",
+      "wall_time_secs": 900
+    },
+    "bin-keyman-vault": {
+      "codon": "bv",
+      "filesystem_extra": [
+        "~/workspace/keys (read)"
+      ],
+      "note": "rotate = external_effect (Cloudflare API); operator-gated by secret-freeze upstream",
+      "wall_time_secs": 300
+    },
+    "bin-receipt-tools": {
+      "codon": "br",
+      "wall_time_secs": 120
+    },
+    "bin-secret-scrub": {
+      "codon": "bs",
+      "wall_time_secs": 600
+    },
+    "bin-shamir": {
+      "codon": "bm",
+      "note": "secret values via FILE PATH only; adapter never logs share material",
+      "wall_time_secs": 120
+    }
+  }
 }

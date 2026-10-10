@@ -7,13 +7,13 @@
     "mutation_class": "write",
     "required_capability": null
   },
-  "codon": "bn",
+  "codon": "bk",
   "contracts": [
     {
-      "description": "Run the S22 proof backup",
+      "description": "Run the S22 proof backup: tier-0 tarballs + tier-1 git bundles, sha256 manifest, keep-4",
       "input_schema": {
         "properties": {
-          "level": {
+          "dest": {
             "type": "string"
           }
         },

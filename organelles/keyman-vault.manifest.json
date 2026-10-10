@@ -2,28 +2,57 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
+      "bin.keyman-vault:manage",
       "bin.keyman-vault:write"
     ],
-    "mutation_class": "write",
+    "mutation_class": "external_effect",
     "required_capability": null
   },
-  "codon": "bn",
+  "codon": "bv",
   "contracts": [
     {
-      "description": "Key/vault operation by name only",
+      "description": "Key/vault operation by name only (sync/rotate/list) \u2014 never emits values",
       "input_schema": {
         "properties": {
           "action": {
             "type": "string"
           },
-          "name": {
+          "key_name": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "external_effect",
+      "op": "manage",
+      "required_capability": "bin.keyman-vault:manage"
+    },
+    {
+      "description": "Export vault records to portable format (names only in logs)",
+      "input_schema": {
+        "properties": {
+          "dest": {
             "type": "string"
           }
         },
         "type": "object"
       },
       "mutation_class": "write",
-      "op": "manage",
+      "op": "export_vault",
+      "required_capability": "bin.keyman-vault:write"
+    },
+    {
+      "description": "Export vault to KeePassXC database",
+      "input_schema": {
+        "properties": {
+          "dest": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "write",
+      "op": "export_keepassxc",
       "required_capability": "bin.keyman-vault:write"
     }
   ],

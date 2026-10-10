@@ -2,18 +2,18 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "bin.checkpoint-compute:write"
+      "bin.checkpoint:write"
     ],
     "mutation_class": "write",
     "required_capability": null
   },
-  "codon": "bn",
+  "codon": "bc",
   "contracts": [
     {
-      "description": "Checkpoint compute state",
+      "description": "Checkpoint compute state (queue/ledger/budget snapshots)",
       "input_schema": {
         "properties": {
-          "scope": {
+          "label": {
             "type": "string"
           }
         },
@@ -21,7 +21,7 @@
       },
       "mutation_class": "write",
       "op": "checkpoint",
-      "required_capability": "bin.checkpoint-compute:write"
+      "required_capability": "bin.checkpoint:write"
     }
   ],
   "description": "Checkpoint compute state.",
