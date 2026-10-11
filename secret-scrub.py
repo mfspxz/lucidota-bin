@@ -79,6 +79,17 @@ _RUNID_SHAPE = re.compile(r'run-\d{8}T\d{6}Z(?:\.\d{6}-\d+)?-[0-9a-f]{8}(?:-a\d+
 # (2026-10-10: checkpoint-compute's secret gate deleted a snapshot on
 # falsification.jsonl lines 255-257 — triage claim ids, false positive.)
 _TRIAGE_ID_SHAPE = re.compile(r'triage/wont-fix-j\d+-[a-z0-9][a-z0-9\-]*')
+# A short-form falsification claim id (c<seq>-<8 hex>, e.g. c266-3eb9406f,
+# minted by pipeline/falsification.py mint_claim_id). <=16 chars, so it
+# can never trip LONG_PAT on its own (32-char floor). The grammar is
+# deliberately narrow: fullmatch against the LONG_PAT token, so a bare
+# "c123" prefix, a truncated hex tail, or any longer/secret-shaped run
+# does NOT match and still gets evaluated. This is a DOCUMENTED SHAPE
+# exemption, not a weakening of LONG_PAT itself. Per-match skip, so
+# other matches on the same line are still evaluated.
+# (2026-10-11: brutal-audit round 4 lane D — structural fix for the
+# long-identifier trap; old long slugs are grandfathered, never rewritten.)
+_CLAIMID_SHAPE = re.compile(r'c\d+-[0-9a-f]{8}')
 _PUNCT_SHAPE = re.compile(r'[-_.~+/=]+')
 # A LONG_PAT match consisting ONLY of punctuation characters from the
 # class (hyphens, dots, underscores, tildes, plus, slash, equals) is not
@@ -155,6 +166,8 @@ def scan_file(path: str, allow):
                         continue  # pipeline run id, not a secret
                     if _TRIAGE_ID_SHAPE.fullmatch(m):
                         continue  # falsification triage claim id, not a secret
+                    if _CLAIMID_SHAPE.fullmatch(m):
+                        continue  # short-form falsification claim id, not a secret
                     if _PUNCT_SHAPE.fullmatch(m):
                         continue  # punctuation-only run (comment/rule separators)
                     # high-entropy long token, not a UUID / path / hash-looking run
