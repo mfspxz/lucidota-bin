@@ -63,6 +63,12 @@ is_excluded() {
     .env|.env.*|*/.env|*/.env.*) return 0 ;;
     *credentials*|*secret*|*token*|*passwd*|*shadow*) return 0 ;;
     .git/*) return 0 ;;
+    # append-only chained ledgers: tracked in-repo, torn point-in-time
+    # copies have low insurance value and their long identifiers
+    # (claim IDs, receipt hashes) false-positive the secret gate —
+    # 20261011T025843Z: gate tripped on falsification.jsonl:258,259,
+    # snapshot deleted, uncommitted work left uninsured. Exclude.
+    falsification.jsonl|*/falsification.jsonl) return 0 ;;
   esac
   return 1
 }
