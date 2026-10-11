@@ -217,3 +217,32 @@ No backlog document existed before this pass. Items:
 | B-2 | shamir venv hygiene | QUEUED, low |
 
 No standing HIGHs. The backlog must not grow without triage.
+
+---
+
+## Round 3 (2026-10-11): checkpoint-vault refresh — OWNED + SCHEDULED
+
+**Change:** `checkpoint-vault-refresh.py` (new) — the single authorized writer
+to `~/workspace/checkpoint-vault/`. Driven by eventd watch `checkpoint-refresh`
+(file watch on `~/workspace/compute/falsification.jsonl`, debounce 180s; NO
+timers). Exit 2 → `checkpoint.refresh` outbox event; exit 0 = silent no-op;
+exit 1 = error/`watch.error`.
+
+**Rigor disposition:**
+
+| Finding | Disposition | Summary |
+|---|---|---|
+| R-3 | Applies | bin now OWNS the out-of-band head copy: the refresh action pins falsification seq + head_hash + legacy_prefix_sha256 and proof-ledger count + head into the vault. The vault is NOT a git repo and lives outside all pipeline write paths. |
+| R-6 | Applies | Consumer = eventd watch; enforcement = write-path guard in the script (fails closed, exit 1, if any pipeline Python file references the vault path) + 555/444 tripwire perms. Negative test: the lane's live fire test (see below) plus the guard's own refusal path (exercised in design review; a planted reference was used to confirm refusal — see test log). |
+| R-7 | Applies | No dedicated unit test file; the live end-to-end test stands as the evidence (measured, this pass). |
+| R-8 | Applies | No provenance claims made; bundles are unsigned pin snapshots, documented as such. |
+| R-11 | Applies | UNKNOWN list: (a) whether eventd re-registers the watch correctly after every VM replacement (watchdog restarts the daemon; watch config is static TOML — not yet observed across a replacement); (b) long-term bundle accumulation (one bundle per tail advance; ~2.4KB each). |
+
+**Measured evidence (this pass):**
+- Manual run: exit 2, bundle `CHECKPOINT-2026-10-11T0401.json` written, pins falsification seq=260 / head `eda2f728…` / prefix `44dcdeca…` (unchanged), proof-ledger 91 entries / head `b631c472…`; verify pinned honestly as BROKEN (line 249) + MISMATCH (stale seq-195 published head).
+- Write-path guard: verified zero pipeline references to the vault (`grep -rn checkpoint-vault` over `~/workspace/compute` + pipeline tree: clean). Refusal path verified by planting a temporary reference in a scratch copy — the script exited 1 before any write. Plant removed.
+- Live fire: test falsification entry appended → watch fired after debounce → `checkpoint.refresh` event in outbox → new bundle pinned the advanced tail. (Full event evidence in the lane report.)
+
+**Test counts:** live end-to-end 1/1 (manual + event-driven); guard refusal 1/1 (planted). Label: **measured**.
+
+**Standing residual (unchanged from round 2):** same-VM boundary — a log+witness+checkpoint rewrite is undetectable on this VM. True independence needs the operator's notebook/second machine.
