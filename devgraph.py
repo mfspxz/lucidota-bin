@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# DEPRECATED (2026-10-10, rust-audit): ported to Rust — see
+# ~/workspace/rust-audit/rs/src/bin/devgraph-rs.rs
+# Archive-don't-delete: this file still runs, but new work goes to the Rust binary.
 """devgraph — SOTA dev-graph toolkit for every project.
 
 Usage:

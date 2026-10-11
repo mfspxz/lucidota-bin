@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# DEPRECATED (2026-10-10, rust-audit): ported to Rust — see
+# ~/workspace/rust-audit/rs/src/bin/secret-scrub-rs.rs
+# Archive-don't-delete: this file still runs, but new work goes to the Rust binary.
 """secret-scrub.py — fail-closed secret scanner. Mandatory pre-commit gate.
 
 Scans files for candidate secret material and FAILS (exit 1) with a

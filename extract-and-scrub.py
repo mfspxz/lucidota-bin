@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# DEPRECATED (2026-10-10, rust-audit): ported to Rust — see
+# ~/workspace/rust-audit/rs/src/bin/extract-and-scrub-rs.rs
+# Archive-don't-delete: this file still runs, but new work goes to the Rust binary.
 """extract-and-scrub.py — save secrets to a locked vault file, then scrub them.
 
 Usage: extract-and-scrub.py <vault-path> <files...>

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# DEPRECATED (2026-10-10, rust-audit): ported to Rust — see
+# ~/workspace/rust-audit/rs/src/bin/enrich-graphs-rs.rs
+# Archive-don't-delete: this file still runs, but new work goes to the Rust binary.
 """Enrich all dev graphs with granular current-state nodes + build master graph.
 Idempotent: merges by id, never overwrites an existing node's status.
 Also writes dashboard data files.
