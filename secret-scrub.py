@@ -67,6 +67,15 @@ _PATH_SHAPE = re.compile(r'~?/[\w.\-~]+(?:/[\w.\-~]+)+')
 # to 45 chars and tripped LONG_PAT on quota.jsonl lines 1,3. The -a\d+ tail
 # is part of the machine-generated id, not credential material.)
 _RUNID_SHAPE = re.compile(r'run-\d{8}T\d{6}Z(?:\.\d{6}-\d+)?-[0-9a-f]{8}(?:-a\d+)?')
+# A falsification-triage claim id (triage/wont-fix-j<NNN>-<slug>-<UTC date>,
+# e.g. triage/wont-fix-j008-future-shapes-2026-10-10). Machine-generated
+# identifiers for wont-fix triage records — 40-45 chars, so they trip
+# LONG_PAT's len>=40/entropy rule — but they are not credential material:
+# literal "triage/wont-fix-" prefix, fixed j<NNN> segment, fixed date tail.
+# Per-match skip, so other matches on the same line are still evaluated.
+# (2026-10-10: checkpoint-compute's secret gate deleted a snapshot on
+# falsification.jsonl lines 255-257 — triage claim ids, false positive.)
+_TRIAGE_ID_SHAPE = re.compile(r'triage/wont-fix-j\d+-[a-z0-9][a-z0-9\-]*')
 _PUNCT_SHAPE = re.compile(r'[-_.~+/=]+')
 # A LONG_PAT match consisting ONLY of punctuation characters from the
 # class (hyphens, dots, underscores, tildes, plus, slash, equals) is not
@@ -83,8 +92,11 @@ _PUNCT_SHAPE = re.compile(r'[-_.~+/=]+')
 # secrets, but they trip LONG_PAT's len>=64 rule on every chained file.
 # Mask them before scanning; a 64-hex value in one of these fields is a
 # digest by construction and cannot be credential material.
+# 2026-10-10: the falsification v1 schema renamed the chain fields to
+# "prev_hash"/"entry_hash" (no underscore prefix); the mask covers both
+# spellings now, same rationale — a 64-hex chain digest is not a secret.
 _CHAIN_HASH_RE = re.compile(
-    r'"_prev_hash"\s*:\s*"(?:GENESIS:sha256:)?[0-9a-f]{64}"|"_record_hash"\s*:\s*"[0-9a-f]{64}"')
+    r'"_?prev_hash"\s*:\s*"(?:GENESIS:)?(?:sha256:)?[0-9a-f]{64}"|"_record_hash"\s*:\s*"[0-9a-f]{64}"|"entry_hash"\s*:\s*"[0-9a-f]{64}"')
 
 SKIP_DIRS = {'.venv', 'node_modules', '.git', 'target', '__pycache__'}
 SKIP_FILES = {'secret-scrub.py'}
@@ -138,6 +150,8 @@ def scan_file(path: str, allow):
                         continue  # filesystem path, not a secret
                     if _RUNID_SHAPE.fullmatch(m):
                         continue  # pipeline run id, not a secret
+                    if _TRIAGE_ID_SHAPE.fullmatch(m):
+                        continue  # falsification triage claim id, not a secret
                     if _PUNCT_SHAPE.fullmatch(m):
                         continue  # punctuation-only run (comment/rule separators)
                     # high-entropy long token, not a UUID / path / hash-looking run
